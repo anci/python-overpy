@@ -1103,6 +1103,29 @@ class OSMSAXHandler(handler.ContentHandler):
         self._result.append(Node(result=self._result, **self._curr))
         self._curr = {}
 
+    def _handle_start_area(self, attrs):
+        """
+        Handle opening node element
+
+        :param attrs: Attributes of the element
+        :type attrs: Dict
+        """
+        self._curr = {
+            'attributes': dict(attrs),
+            'area_id': None,
+            'tags': {}
+        }
+        if attrs.get('id', None) is not None:
+            self._curr['area_id'] = int(attrs['id'])
+            del self._curr['attributes']['id']
+
+    def _handle_end_area(self):
+        """
+        Handle closing node element
+        """
+        self._result.append(Area(result=self._result, **self._curr))
+        self._curr = {}
+
     def _handle_start_way(self, attrs):
         """
         Handle opening way element
