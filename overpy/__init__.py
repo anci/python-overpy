@@ -175,11 +175,17 @@ class Result(object):
         """
         if elements is None:
             elements = []
+        self._areas = OrderedDict((element.id, element) for element in elements if is_valid_type(element, Area))
         self._nodes = OrderedDict((element.id, element) for element in elements if is_valid_type(element, Node))
         self._ways = OrderedDict((element.id, element) for element in elements if is_valid_type(element, Way))
         self._relations = OrderedDict((element.id, element)
                                       for element in elements if is_valid_type(element, Relation))
-        self._class_collection_map = {Node: self._nodes, Way: self._ways, Relation: self._relations}
+        self._class_collection_map = {
+            Node: self._nodes,
+            Way: self._ways,
+            Relation: self._relations,
+            Area: self._areas
+        }
         self.api = api
 
     def expand(self, other):
@@ -243,6 +249,9 @@ class Result(object):
     def get_node_ids(self):
         return self.get_ids(filter_cls=Node)
 
+    def get_area_ids(self):
+        return self.get_ids(filter_cls=Area)
+
     def get_way_ids(self):
         return self.get_ids(filter_cls=Way)
 
@@ -262,7 +271,7 @@ class Result(object):
         :rtype: overpy.Result
         """
         result = cls(api=api)
-        for elem_cls in [Node, Way, Relation]:
+        for elem_cls in [Area, Node, Way, Relation]:
             for element in data.get("elements", []):
                 e_type = element.get("type")
                 if hasattr(e_type, "lower") and e_type.lower() == elem_cls._type_value:
@@ -353,6 +362,16 @@ class Result(object):
         :return: List of elements
         """
         return self.get_elements(Node, elem_id=node_id, **kwargs)
+
+    def get_areas(self, area_id=None, **kwargs):
+        """
+        Alias for get_elements() but filter the result by Node()
+
+        :param node_id: The Id of the node
+        :type node_id: Integer
+        :return: List of elements
+        """
+        return self.get_elements(Area, elem_id=area_id, **kwargs)
 
     def get_relation(self, rel_id, resolve_missing=False):
         """
@@ -446,6 +465,8 @@ class Result(object):
 
     node_ids = property(get_node_ids)
     nodes = property(get_nodes)
+    area_ids = property(get_area_ids)
+    areas = property(get_areas)
     relation_ids = property(get_relation_ids)
     relations = property(get_relations)
     way_ids = property(get_way_ids)
@@ -582,6 +603,11 @@ class Node(Element):
             attributes[n] = v
 
         return cls(node_id=node_id, lat=lat, lon=lon, tags=tags, attributes=attributes, result=result)
+
+
+class Area(Node):
+
+    _type_value = "area"
 
 
 class Way(Element):
