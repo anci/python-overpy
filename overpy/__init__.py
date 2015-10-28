@@ -609,6 +609,94 @@ class Area(Node):
 
     _type_value = "area"
 
+    def __init__(self, area_id=None, **kwargs):
+        """
+        :param area_id: Id of the node element
+        :type area_id: Integer
+        :param kwargs: Additional arguments are passed directly to the parent class
+        """
+
+        Element.__init__(self, **kwargs)
+        self.id = area_id
+
+    def __repr__(self):
+        return "<overpy.Area id={}>".format(self.id)
+
+    @classmethod
+    def from_json(cls, data, result=None):
+        """
+        Create new Node element from JSON data
+
+        :param data: Element data from JSON
+        :type data: Dict
+        :param result: The result this element belongs to
+        :type result: overpy.Result
+        :return: New instance of Node
+        :rtype: overpy.Node
+        :raises overpy.exception.ElementDataWrongType: If type value of the passed JSON data does not match.
+        """
+        if data.get("type") != cls._type_value:
+            raise exception.ElementDataWrongType(
+                type_expected=cls._type_value,
+                type_provided=data.get("type")
+            )
+
+        tags = data.get("tags", {})
+
+        area_id = data.get("id")
+
+        attributes = {}
+        ignore = ["type", "id", "tags"]
+        for n, v in data.items():
+            if n in ignore:
+                continue
+            attributes[n] = v
+
+        return cls(node_id=area_id, tags=tags, attributes=attributes, result=result)
+
+    @classmethod
+    def from_xml(cls, child, result=None):
+        """
+        Create new way element from XML data
+
+        :param child: XML node to be parsed
+        :type child: xml.etree.ElementTree.Element
+        :param result: The result this node belongs to
+        :type result: overpy.Result
+        :return: New Way oject
+        :rtype: overpy.Node
+        :raises overpy.exception.ElementDataWrongType: If name of the xml child node doesn't match
+        :raises ValueError: If a tag doesn't have a name
+        """
+        if child.tag.lower() != cls._type_value:
+            raise exception.ElementDataWrongType(
+                type_expected=cls._type_value,
+                type_provided=child.tag.lower()
+            )
+
+        tags = {}
+
+        for sub_child in child:
+            if sub_child.tag.lower() == "tag":
+                name = sub_child.attrib.get("k")
+                if name is None:
+                    raise ValueError("Tag without name/key.")
+                value = sub_child.attrib.get("v")
+                tags[name] = value
+
+        area_id = child.attrib.get("id")
+        if area_id is not None:
+            area_id = int(area_id)
+
+        attributes = {}
+        ignore = ["id", ]
+        for n, v in child.attrib.items():
+            if n in ignore:
+                continue
+            attributes[n] = v
+
+        return cls(node_id=area_id, tags=tags, attributes=attributes, result=result)
+
 
 class Way(Element):
 
